@@ -17,6 +17,7 @@ Game::Game()
 ,mTicksCount(0)
 ,mIsRunning(true)
 ,mPaddleDir(0)
+,mPaddleDir2(0)
 {
 	
 }
@@ -62,10 +63,14 @@ bool Game::Initialize()
 	//
 	mPaddlePos.x = 10.0f;
 	mPaddlePos.y = 768.0f/2.0f;
+	mPaddlePos2.x = 1014.0f-thickness;
+	mPaddlePos2.y = 768.0f / 2.0f;
 	mBallPos.x = 1024.0f/2.0f;
 	mBallPos.y = 680.0f/2.0f;
-	mBallVel.x = -200.0f;
-	mBallVel.y = 235.0f;
+	mBallVel.x = -200.0f;		// ボール速度
+	mBallVel.y = 235.0f;		// ボール速度
+	mBallVel.x = 0.0f;		// ボール速度
+	mBallVel.y = 0.0f;		// ボール速度
 	return true;
 }
 
@@ -111,6 +116,16 @@ void Game::ProcessInput()
 	{
 		mPaddleDir += 1;
 	}
+	// I/K keysが押されればパドルの向き更新
+	mPaddleDir2 = 0;
+	if (state[SDL_SCANCODE_I])
+	{
+		mPaddleDir2 -= 1;
+	}
+	if (state[SDL_SCANCODE_K])
+	{
+		mPaddleDir2 += 1;
+	}
 }
 
 void Game::UpdateGame()
@@ -133,9 +148,10 @@ void Game::UpdateGame()
 	mTicksCount = SDL_GetTicks();
 	
 	// パドルの方向に基づいてパドルの位置を更新
-	if (mPaddleDir != 0)
+	if (mPaddleDir != 0|| mPaddleDir2 != 0)
 	{
-		mPaddlePos.y += mPaddleDir * 300.0f * deltaTime;
+		if(mPaddleDir  !=0)	mPaddlePos.y += mPaddleDir * 300.0f * deltaTime;
+		if(mPaddleDir2 !=0)	mPaddlePos2.y += mPaddleDir2 * 300.0f * deltaTime;
 		// パドルが画面外へ行かないための処理
 		if (mPaddlePos.y < (paddleH/2.0f + thickness))
 		{
@@ -145,8 +161,17 @@ void Game::UpdateGame()
 		{
 			mPaddlePos.y = 680.0f - paddleH/2.0f - thickness;
 		}
+		// 2Pのパドルが画面外へ行かないための処理
+		if (mPaddlePos2.y < (paddleH / 2.0f + thickness))
+		{
+			mPaddlePos2.y = paddleH / 2.0f + thickness;
+		}
+		else if (mPaddlePos2.y > (680.0f - paddleH / 2.0f - thickness))
+		{
+			mPaddlePos2.y = 680.0f - paddleH / 2.0f - thickness;
+		}
 	}
-	
+
 	// ballの速度に基づいてポジションを更新
 	mBallPos.x += mBallVel.x * deltaTime;
 	mBallPos.y += mBallVel.y * deltaTime;
@@ -221,11 +246,11 @@ void Game::GenerateOutput()
 	SDL_RenderFillRect(mRenderer, &wall);
 	
 	// 右の壁の描画
-	wall.x = 1024 - thickness;
-	wall.y = 0;
-	wall.w = thickness;
-	wall.h = 1024;
-	SDL_RenderFillRect(mRenderer, &wall);
+	//wall.x = 1024 - thickness;
+	//wall.y = 0;
+	//wall.w = thickness;
+	//wall.h = 1024;
+	//SDL_RenderFillRect(mRenderer, &wall);
 	
 	// パドルの描画
 	SDL_Rect paddle{
@@ -234,6 +259,10 @@ void Game::GenerateOutput()
 		thickness,
 		static_cast<int>(paddleH)
 	};
+	SDL_RenderFillRect(mRenderer, &paddle);
+	//2Pパドルの描写
+	paddle.x = static_cast<int>(mPaddlePos2.x);
+	paddle.y = static_cast<int>(mPaddlePos2.y - paddleH / 2);
 	SDL_RenderFillRect(mRenderer, &paddle);
 	
 	// ボールの描画
