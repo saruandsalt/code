@@ -8,7 +8,7 @@
 
 #include "Game.h"
 
-const int thickness = 15;
+const int thickness = 15;		//壁の厚さ
 const float paddleH = 100.0f;
 
 Game::Game()
@@ -37,7 +37,7 @@ bool Game::Initialize()
 		100,	// Top left x-coordinate of window
 		100,	// Top left y-coordinate of window
 		1024,	// Width of window
-		768,	// Height of window
+		680,	// Height of window
 		0		// Flags (0 for no flags set)
 	);
 
@@ -63,7 +63,7 @@ bool Game::Initialize()
 	mPaddlePos.x = 10.0f;
 	mPaddlePos.y = 768.0f/2.0f;
 	mBallPos.x = 1024.0f/2.0f;
-	mBallPos.y = 768.0f/2.0f;
+	mBallPos.y = 680.0f/2.0f;
 	mBallVel.x = -200.0f;
 	mBallVel.y = 235.0f;
 	return true;
@@ -95,13 +95,13 @@ void Game::ProcessInput()
 	
 	// Get state of keyboard
 	const Uint8* state = SDL_GetKeyboardState(NULL);
-	// If escape is pressed, also end loop
+	// エスケープが押されればゲームを終了
 	if (state[SDL_SCANCODE_ESCAPE])
 	{
 		mIsRunning = false;
 	}
 	
-	// Update paddle direction based on W/S keys
+	// W/S keysが押されればパドルの向き更新
 	mPaddleDir = 0;
 	if (state[SDL_SCANCODE_W])
 	{
@@ -115,75 +115,75 @@ void Game::ProcessInput()
 
 void Game::UpdateGame()
 {
-	// Wait until 16ms has elapsed since last frame
+	// 最後のフレーム更新から必ず16ms待つ
 	while (!SDL_TICKS_PASSED(SDL_GetTicks(), mTicksCount + 16))
 		;
 
-	// Delta time is the difference in ticks from last frame
-	// (converted to seconds)
+	// Delta timeは最後のフレームからの実時間差
+	// (秒数への変換)
 	float deltaTime = (SDL_GetTicks() - mTicksCount) / 1000.0f;
 	
-	// Clamp maximum delta time value
+	// Delta timeの最大値を制限
 	if (deltaTime > 0.05f)
 	{
 		deltaTime = 0.05f;
 	}
 
-	// Update tick counts (for next frame)
+	// 実時間の更新 (次のフレームで参照するための)
 	mTicksCount = SDL_GetTicks();
 	
-	// Update paddle position based on direction
+	// パドルの方向に基づいてパドルの位置を更新
 	if (mPaddleDir != 0)
 	{
 		mPaddlePos.y += mPaddleDir * 300.0f * deltaTime;
-		// Make sure paddle doesn't move off screen!
+		// パドルが画面外へ行かないための処理
 		if (mPaddlePos.y < (paddleH/2.0f + thickness))
 		{
 			mPaddlePos.y = paddleH/2.0f + thickness;
 		}
-		else if (mPaddlePos.y > (768.0f - paddleH/2.0f - thickness))
+		else if (mPaddlePos.y > (680.0f - paddleH/2.0f - thickness))
 		{
-			mPaddlePos.y = 768.0f - paddleH/2.0f - thickness;
+			mPaddlePos.y = 680.0f - paddleH/2.0f - thickness;
 		}
 	}
 	
-	// Update ball position based on ball velocity
+	// ballの速度に基づいてポジションを更新
 	mBallPos.x += mBallVel.x * deltaTime;
 	mBallPos.y += mBallVel.y * deltaTime;
 	
-	// Bounce if needed
-	// Did we intersect with the paddle?
+	// 跳ね返る条件であれば
+	// パドルとボールのポジションの差を求めて
 	float diff = mPaddlePos.y - mBallPos.y;
-	// Take absolute value of difference
+	// 差を絶対値に変換
 	diff = (diff > 0.0f) ? diff : -diff;
 	if (
-		// Our y-difference is small enough
+		// Yの差が十分に小さいかつ
 		diff <= paddleH / 2.0f &&
-		// We are in the correct x-position
+		// Xのポジションがそれらしい位置に来ているかつ
 		mBallPos.x <= 25.0f && mBallPos.x >= 20.0f &&
-		// The ball is moving to the left
+		// ボールの向きが左向きであれば
 		mBallVel.x < 0.0f)
 	{
 		mBallVel.x *= -1.0f;
 	}
-	// Did the ball go off the screen? (if so, end game)
-	else if (mBallPos.x <= 0.0f)
+	// ボールが画面の外へ出たか
+	else if (mBallPos.x <= 0.0f||mBallPos.x>=1024)
 	{
 		mIsRunning = false;
 	}
-	// Did the ball collide with the right wall?
+	// ボールが右の壁と衝突したか
 	else if (mBallPos.x >= (1024.0f - thickness) && mBallVel.x > 0.0f)
 	{
 		mBallVel.x *= -1.0f;
 	}
 	
-	// Did the ball collide with the top wall?
+	// ボールが上の壁と衝突したか
 	if (mBallPos.y <= thickness && mBallVel.y < 0.0f)
 	{
 		mBallVel.y *= -1;
 	}
-	// Did the ball collide with the bottom wall?
-	else if (mBallPos.y >= (768 - thickness) &&
+	// ボールが下の壁と衝突したか
+	else if (mBallPos.y >= (680 - thickness) &&
 		mBallVel.y > 0.0f)
 	{
 		mBallVel.y *= -1;
@@ -201,13 +201,13 @@ void Game::GenerateOutput()
 		255		// A
 	);
 	
-	// Clear back buffer
+	// バックバッファをクリアする
 	SDL_RenderClear(mRenderer);
 
-	// Draw walls
+	// 背景の描画
 	SDL_SetRenderDrawColor(mRenderer, 255, 255, 255, 255);
 	
-	// Draw top wall
+	// 上の壁の描画
 	SDL_Rect wall{
 		0,			// Top left x
 		0,			// Top left y
@@ -216,18 +216,18 @@ void Game::GenerateOutput()
 	};
 	SDL_RenderFillRect(mRenderer, &wall);
 	
-	// Draw bottom wall
-	wall.y = 768 - thickness;
+	// 下の壁の描画
+	wall.y = 680 - thickness;
 	SDL_RenderFillRect(mRenderer, &wall);
 	
-	// Draw right wall
+	// 右の壁の描画
 	wall.x = 1024 - thickness;
 	wall.y = 0;
 	wall.w = thickness;
 	wall.h = 1024;
 	SDL_RenderFillRect(mRenderer, &wall);
 	
-	// Draw paddle
+	// パドルの描画
 	SDL_Rect paddle{
 		static_cast<int>(mPaddlePos.x),
 		static_cast<int>(mPaddlePos.y - paddleH/2),
@@ -236,7 +236,7 @@ void Game::GenerateOutput()
 	};
 	SDL_RenderFillRect(mRenderer, &paddle);
 	
-	// Draw ball
+	// ボールの描画
 	SDL_Rect ball{	
 		static_cast<int>(mBallPos.x - thickness/2),
 		static_cast<int>(mBallPos.y - thickness/2),
@@ -245,7 +245,7 @@ void Game::GenerateOutput()
 	};
 	SDL_RenderFillRect(mRenderer, &ball);
 	
-	// Swap front buffer and back buffer
+	// フロントバッファとバックバッファを交換
 	SDL_RenderPresent(mRenderer);
 }
 
